@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmsExpert Matchmaking</title>
+    <style>
+        :root { --primary: #FF5A5F; --secondary: #00A699; --dark: #484848; --light: #f7f7f7; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); margin: 0; padding: 0; }
+        .navbar { background: white; padding: 20px; text-align: center; border-bottom: 1px solid #ddd; }
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .step { display: none; }
+        .step.active { display: block; }
+        
+        /* Progress Bar */
+        .progress-container { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .dot { width: 30px; height: 30px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+        .dot.active { background: var(--primary); }
+        
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        
+        .seminar-card { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 6px solid var(--secondary); }
+        .badge { background: #eafaf1; color: var(--secondary); padding: 4px 8px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>❌ AmsExpert Match</h2>
+</div>
+
+<div class="container">
+    <div class="progress-container">
+        <div class="dot active" id="dot1">1</div>
+        <div class="dot" id="dot2">2</div>
+        <div class="dot" id="dot3">3</div>
+    </div>
+
+    <div class="step active" id="step1">
+        <h3>Step 1: Join the Community</h3>
+        <p>Start swapping skills in Amsterdam today.</p>
+        <input type="text" placeholder="Full Name">
+        <input type="email" placeholder="Email Address">
+        <button onclick="nextStep(2)">Continue to Profile</button>
+    </div>
+
+    <div class="step" id="step2">
+        <h3>Step 2: Build Your Profile</h3>
+        <p>What is your expertise and what do you want to master?</p>
+        <label>I can teach:</label>
+        <select><option>Machine Learning</option><option>UX Design</option><option>Dutch Cooking</option><option>Public Speaking</option><option>Financial Modeling</option><option>Photography</option></select>
+        <label>I want to learn:</label>
+        <select><option>Machine Learning</option><option>UX Design</option><option>Dutch Cooking</option><option>Public Speaking</option><option>Financial Modeling</option><option>Photography</option></select>
+        <button onclick="nextStep(3)">Find My Matches</button>
+    </div>
+
+    <div class="step" id="step3">
+        <h3>Step 3: Found Seminars</h3>
+        <p>Based on your profile, here are active groups in Amsterdam:</p>
+        <div id="seminar-list">
+            
+                <div class="seminar-card">
+                    <span class="badge">📍 De Pijp</span>
+                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
+                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Carlos Reyes</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
+                </div>
+            
+                <div class="seminar-card">
+                    <span class="badge">📍 Amsterdam Noord</span>
+                    <h4 style="margin: 10px 0 5px 0;">Photography Seminar</h4>
+                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Sean Castro</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">👥 6 people have joined</p>
+                </div>
+            
+                <div class="seminar-card">
+                    <span class="badge">📍 Zuid</span>
+                    <h4 style="margin: 10px 0 5px 0;">Dutch Cooking Seminar</h4>
+                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Joanna Hodges</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">👥 10 people have joined</p>
+                </div>
+            
+                <div class="seminar-card">
+                    <span class="badge">📍 Amsterdam Noord</span>
+                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
+                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Sheila Peterson</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
+                </div>
+            
+                <div class="seminar-card">
+                    <span class="badge">📍 Westerpark</span>
+                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
+                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Thomas Simpson</strong></p>
+                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
+                </div>
+            
+        </div>
+        <button onclick="location.reload()" style="background: #484848;">Reset Demo</button>
+    </div>
+</div>
+
+<script>
+    function nextStep(step) {
+        // Hide all steps
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        // Show target step
+        document.getElementById('step' + step).classList.add('active');
+        // Update dots
+        document.getElementById('dot' + step).classList.add('active');
+    }
+</script>
+
+</body>
+</html>
