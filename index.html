@@ -1,117 +1,182 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AmsExpert Matchmaking</title>
+    <title>The Quriousity Spotlight</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #FF5A5F; --secondary: #00A699; --dark: #484848; --light: #f7f7f7; }
-        body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); margin: 0; padding: 0; }
-        .navbar { background: white; padding: 20px; text-align: center; border-bottom: 1px solid #ddd; }
-        .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .step { display: none; }
-        .step.active { display: block; }
-        
-        /* Progress Bar */
-        .progress-container { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .dot { width: 30px; height: 30px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-        .dot.active { background: var(--primary); }
-        
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
-        
-        .seminar-card { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 6px solid var(--secondary); }
-        .badge { background: #eafaf1; color: var(--secondary); padding: 4px 8px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
+        :root { --dark: #1a1a1a; --white: #ffffff; --teach-color: #3498db; --learn-color: #e74c3c; --shadow: 6px 6px 0px #1a1a1a; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #fdfdfd; background-image: radial-gradient(#1a1a1a 0.5px, transparent 0.5px); background-size: 20px 20px; display: flex; justify-content: center; padding: 40px 20px; color: var(--dark); }
+        .card { background: var(--white); width: 100%; max-width: 750px; padding: 40px; border: 4px solid var(--dark); box-shadow: var(--shadow); border-radius: 4px; }
+        h2 { font-size: 2.2rem; text-transform: uppercase; line-height: 0.9; margin-bottom: 25px; letter-spacing: -1px; }
+        label { display: block; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px; color: #555; }
+        .progress-bar { height: 16px; border: 3px solid var(--dark); margin-bottom: 30px; background: #eee; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--teach-color); width: 25%; transition: 0.5s; }
+        input, select { width: 100%; padding: 15px; margin-bottom: 20px; border: 3px solid var(--dark); font-size: 1rem; font-weight: bold; outline: none; box-sizing: border-box; background: white; }
+        .word-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { padding: 8px 16px; border: 2px solid var(--dark); cursor: pointer; font-weight: 800; background: white; transition: 0.1s; font-size: 0.9rem; }
+        .tag-teach.selected { background: var(--teach-color); color: white; box-shadow: 3px 3px 0px var(--dark); }
+        .tag-learn.selected { background: var(--learn-color); color: white; box-shadow: 3px 3px 0px var(--dark); }
+        button { width: 100%; padding: 18px; background: var(--dark); color: white; border: none; font-size: 1.1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 20px; }
+        #map { height: 350px; border: 4px solid var(--dark); margin: 20px 0; }
+        .seminar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .seminar-card { background: white; border: 3px solid var(--dark); padding: 15px; position: relative; }
+        .dist-tag { background: var(--dark); color: white; font-size: 0.65rem; padding: 3px 7px; position: absolute; top: -3px; right: -3px; border: 2px solid var(--dark); }
+        .match-type { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .hidden { display: none; }
+        .category-group { margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .category-label { font-weight: 900; text-transform: uppercase; font-size: 0.75rem; color: #777; margin-bottom: 10px; }
+        #matchCount { font-weight: 800; margin-bottom: 15px; text-transform: uppercase; font-size: 0.8rem; color: var(--dark); border-left: 4px solid var(--learn-color); padding-left: 10px; }
+        .host-name { font-size: 0.8rem; margin-top: 8px; font-weight: 700; color: #444; }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-<div class="navbar">
-    <h2>❌ AmsExpert Match</h2>
-</div>
-
-<div class="container">
-    <div class="progress-container">
-        <div class="dot active" id="dot1">1</div>
-        <div class="dot" id="dot2">2</div>
-        <div class="dot" id="dot3">3</div>
+<div class="card">
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    
+    <div id="step1">
+        <h2>The Quriousity Spotlight 🔎<br> <br> Amsterdam Edition</h2>
+        <label>Full Name</label>
+        <input type="text" id="userName" placeholder="Saskia van den Berg">
+        <label>Email Address</label>
+        <input type="email" id="userEmail" placeholder="saskia@example.nl">
+        <label>Neighborhood</label>
+        <select id="userLoc"><option value="Bos en Lommer">Bos en Lommer</option><option value="Buitenveldert">Buitenveldert</option><option value="De Baarsjes">De Baarsjes</option><option value="De Pijp">De Pijp</option><option value="Grachtengordel">Grachtengordel</option><option value="IJburg">IJburg</option><option value="Indische Buurt">Indische Buurt</option><option value="Jordaan">Jordaan</option><option value="NDSM">NDSM</option><option value="Noord-Centrum">Noord-Centrum</option><option value="Oosterparkbuurt">Oosterparkbuurt</option><option value="Oud-West">Oud-West</option><option value="Oud-Zuid">Oud-Zuid</option><option value="Plantage">Plantage</option><option value="Watergraafsmeer">Watergraafsmeer</option><option value="Westerpark">Westerpark</option><option value="Zuidas">Zuidas</option></select>
+        <button onclick="goToStep2a()">Start Swapping →</button>
     </div>
 
-    <div class="step active" id="step1">
-        <h3>Step 1: Join the Community</h3>
-        <p>Start swapping skills in Amsterdam today.</p>
-        <input type="text" placeholder="Full Name">
-        <input type="email" placeholder="Email Address">
-        <button onclick="nextStep(2)">Continue to Profile</button>
+    <div id="step2a" class="hidden">
+        <h2 id="teachTitle">What are your skils?</h2>
+        <div class="category-group"><div class="category-label">🎨 Art & Craft</div><div class="word-cloud"><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Painting</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Ceramic Art</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Photography</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">UX Design</div></div></div><div class="category-group"><div class="category-label">🥑 Lifestyle</div><div class="word-cloud"><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Dutch Cooking</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Gardening</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Urban Hiking</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Yoga</div></div></div><div class="category-group"><div class="category-label">💻 Tech & Data</div><div class="word-cloud"><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Machine Learning</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Python</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Data Viz</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Web Dev</div></div></div><div class="category-group"><div class="category-label">📈 Business</div><div class="word-cloud"><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Public Speaking</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Financial Modeling</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">Agile Coach</div><div class="tag tag-teach" onclick="toggleTag(this, 'teach')">SEO</div></div></div>
+        <button onclick="goToStep2b()">Next Step</button>
     </div>
 
-    <div class="step" id="step2">
-        <h3>Step 2: Build Your Profile</h3>
-        <p>What is your expertise and what do you want to master?</p>
-        <label>I can teach:</label>
-        <select><option>Machine Learning</option><option>UX Design</option><option>Dutch Cooking</option><option>Public Speaking</option><option>Financial Modeling</option><option>Photography</option></select>
-        <label>I want to learn:</label>
-        <select><option>Machine Learning</option><option>UX Design</option><option>Dutch Cooking</option><option>Public Speaking</option><option>Financial Modeling</option><option>Photography</option></select>
-        <button onclick="nextStep(3)">Find My Matches</button>
+    <div id="step2b" class="hidden">
+        <h2>What do you want to learn?</h2>
+        <div class="category-group"><div class="category-label">🎨 Art & Craft</div><div class="word-cloud"><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Painting</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Ceramic Art</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Photography</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">UX Design</div></div></div><div class="category-group"><div class="category-label">🥑 Lifestyle</div><div class="word-cloud"><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Dutch Cooking</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Gardening</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Urban Hiking</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Yoga</div></div></div><div class="category-group"><div class="category-label">💻 Tech & Data</div><div class="word-cloud"><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Machine Learning</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Python</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Data Viz</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Web Dev</div></div></div><div class="category-group"><div class="category-label">📈 Business</div><div class="word-cloud"><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Public Speaking</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Financial Modeling</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">Agile Coach</div><div class="tag tag-learn" onclick="toggleTag(this, 'learn')">SEO</div></div></div>
+        <button onclick="showFinalResults()" style="background: var(--learn-color);">Find Matches</button>
     </div>
 
-    <div class="step" id="step3">
-        <h3>Step 3: Found Seminars</h3>
-        <p>Based on your profile, here are active groups in Amsterdam:</p>
-        <div id="seminar-list">
-            
-                <div class="seminar-card">
-                    <span class="badge">📍 De Pijp</span>
-                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
-                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Carlos Reyes</strong></p>
-                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
-                </div>
-            
-                <div class="seminar-card">
-                    <span class="badge">📍 Amsterdam Noord</span>
-                    <h4 style="margin: 10px 0 5px 0;">Photography Seminar</h4>
-                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Sean Castro</strong></p>
-                    <p style="font-size: 0.8em; color: #666;">👥 6 people have joined</p>
-                </div>
-            
-                <div class="seminar-card">
-                    <span class="badge">📍 Zuid</span>
-                    <h4 style="margin: 10px 0 5px 0;">Dutch Cooking Seminar</h4>
-                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Joanna Hodges</strong></p>
-                    <p style="font-size: 0.8em; color: #666;">👥 10 people have joined</p>
-                </div>
-            
-                <div class="seminar-card">
-                    <span class="badge">📍 Amsterdam Noord</span>
-                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
-                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Sheila Peterson</strong></p>
-                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
-                </div>
-            
-                <div class="seminar-card">
-                    <span class="badge">📍 Westerpark</span>
-                    <h4 style="margin: 10px 0 5px 0;">UX Design Seminar</h4>
-                    <p style="font-size: 0.9em; margin: 0;">Hosted by <strong>Thomas Simpson</strong></p>
-                    <p style="font-size: 0.8em; color: #666;">👥 5 people have joined</p>
-                </div>
-            
-        </div>
-        <button onclick="location.reload()" style="background: #484848;">Reset Demo</button>
+    <div id="step3" class="hidden">
+        <h2>Workshops Near You</h2>
+        <div id="matchCount"></div>
+        <div id="map"></div>
+        <div class="seminar-grid" id="seminarGrid"></div>
+        
+        <button id="loadMoreBtn" onclick="loadMore()" style="background: white; color: var(--dark); border: 3px solid var(--dark); margin-top: 15px;" class="hidden">Load More Matches (+10)</button>
+        <button onclick="location.reload()" style="background: #999;">Start Over</button>
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    function nextStep(step) {
-        // Hide all steps
-        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        // Show target step
-        document.getElementById('step' + step).classList.add('active');
-        // Update dots
-        document.getElementById('dot' + step).classList.add('active');
+    const allSeminars = [{"host": "Patrick Lopez II", "skill": "UX Design", "location_name": "Grachtengordel", "coords": [52.361140423274655, 4.873826469150661]}, {"host": "Michael Chambers", "skill": "Financial Modeling", "location_name": "Oosterparkbuurt", "coords": [52.35492562461475, 4.919496478140042]}, {"host": "Kristy Wood", "skill": "UX Design", "location_name": "Westerpark", "coords": [52.383551706338935, 4.864483568111141]}, {"host": "Dana Garcia", "skill": "Photography", "location_name": "Westerpark", "coords": [52.38099534498005, 4.882098219691564]}, {"host": "Cynthia Lane", "skill": "UX Design", "location_name": "Oud-Zuid", "coords": [52.35145730536353, 4.872130119933943]}, {"host": "Heather Smith", "skill": "Machine Learning", "location_name": "Watergraafsmeer", "coords": [52.35360221493908, 4.937075056155793]}, {"host": "Angela Dunlap", "skill": "Yoga", "location_name": "Watergraafsmeer", "coords": [52.34608208003758, 4.946650782780393]}, {"host": "Randall Knapp", "skill": "Agile Coach", "location_name": "Grachtengordel", "coords": [52.36600313098277, 4.8862971690325185]}, {"host": "Annette Leon", "skill": "Financial Modeling", "location_name": "Plantage", "coords": [52.37059328801122, 4.915921975309888]}, {"host": "Glenda Francis", "skill": "Agile Coach", "location_name": "Oud-Zuid", "coords": [52.35661259767749, 4.874556625327784]}, {"host": "Veronica Carlson", "skill": "Financial Modeling", "location_name": "Buitenveldert", "coords": [52.33186654644255, 4.880167767590225]}, {"host": "Jerome Gonzalez", "skill": "Ceramic Art", "location_name": "Oosterparkbuurt", "coords": [52.35526217689011, 4.915539057467414]}, {"host": "Scott Flores", "skill": "Financial Modeling", "location_name": "Plantage", "coords": [52.3631816732608, 4.914043331227261]}, {"host": "Jennifer Castro", "skill": "Urban Hiking", "location_name": "NDSM", "coords": [52.40565677008569, 4.886159864538331]}, {"host": "Tyler Johnson", "skill": "Dutch Cooking", "location_name": "Watergraafsmeer", "coords": [52.352045491369765, 4.943786090604313]}, {"host": "Michelle Choi", "skill": "UX Design", "location_name": "Indische Buurt", "coords": [52.36371200888676, 4.945194799976133]}, {"host": "Elaine Gay", "skill": "Photography", "location_name": "De Pijp", "coords": [52.353925574839494, 4.89527306755394]}, {"host": "Tyler Mckee", "skill": "Painting", "location_name": "Oud-Zuid", "coords": [52.352070381274224, 4.8702683458258855]}, {"host": "Ian Rivera", "skill": "Gardening", "location_name": "Buitenveldert", "coords": [52.335414356494695, 4.880181779515518]}, {"host": "Joseph Walker", "skill": "Data Viz", "location_name": "Buitenveldert", "coords": [52.32534635557662, 4.871408064646861]}, {"host": "Zachary Warren", "skill": "Public Speaking", "location_name": "Noord-Centrum", "coords": [52.38591288532794, 4.919463118000478]}, {"host": "Janet Powell", "skill": "Painting", "location_name": "Watergraafsmeer", "coords": [52.347355857188106, 4.940575510368956]}, {"host": "Anthony Lee", "skill": "Python", "location_name": "Bos en Lommer", "coords": [52.37562309137405, 4.848301185218979]}, {"host": "Sheila Chen", "skill": "SEO", "location_name": "Watergraafsmeer", "coords": [52.34950339166689, 4.939468639341654]}, {"host": "Christopher Robinson", "skill": "Photography", "location_name": "Oud-Zuid", "coords": [52.354683149318234, 4.872418178918734]}, {"host": "Jose Alexander", "skill": "Agile Coach", "location_name": "Bos en Lommer", "coords": [52.37796481445297, 4.852869158087479]}, {"host": "Kenneth Gordon", "skill": "Urban Hiking", "location_name": "Buitenveldert", "coords": [52.32595857092044, 4.885071292596117]}, {"host": "David Davila", "skill": "Painting", "location_name": "Plantage", "coords": [52.365926159160836, 4.905407770154404]}, {"host": "Jacob Lynn", "skill": "Gardening", "location_name": "Oud-West", "coords": [52.36550917807155, 4.869864748435142]}, {"host": "Taylor Fischer", "skill": "Gardening", "location_name": "Plantage", "coords": [52.36852297960049, 4.917948225359177]}, {"host": "Nicholas White", "skill": "Ceramic Art", "location_name": "Buitenveldert", "coords": [52.33238891152866, 4.877240675334801]}, {"host": "Patricia Flores", "skill": "Dutch Cooking", "location_name": "Bos en Lommer", "coords": [52.37450711681633, 4.847442660732079]}, {"host": "Wanda Peterson", "skill": "Yoga", "location_name": "NDSM", "coords": [52.40501567079862, 4.889029056188067]}, {"host": "Michael Davis", "skill": "Ceramic Art", "location_name": "Buitenveldert", "coords": [52.33088615700507, 4.870994107884764]}, {"host": "Daniel Ellis", "skill": "Financial Modeling", "location_name": "Westerpark", "coords": [52.381145818384056, 4.867513619234455]}, {"host": "Matthew Fernandez", "skill": "Ceramic Art", "location_name": "Buitenveldert", "coords": [52.330612943698966, 4.88378053394722]}, {"host": "Rachel Gilbert", "skill": "SEO", "location_name": "Noord-Centrum", "coords": [52.395098798628155, 4.907379807469903]}, {"host": "Carol Vasquez", "skill": "Ceramic Art", "location_name": "Jordaan", "coords": [52.371029776495504, 4.8865671227071426]}, {"host": "Rachel Sanchez", "skill": "Dutch Cooking", "location_name": "NDSM", "coords": [52.39558544010269, 4.892377119751579]}, {"host": "Lynn Aguilar", "skill": "Agile Coach", "location_name": "Zuidas", "coords": [52.33944230182325, 4.863611695003818]}, {"host": "Timothy Green", "skill": "UX Design", "location_name": "Watergraafsmeer", "coords": [52.35561490131485, 4.947026932317602]}, {"host": "Ronald Lyons", "skill": "Urban Hiking", "location_name": "Oud-Zuid", "coords": [52.35265823964476, 4.876051717351121]}, {"host": "Joseph Horne", "skill": "Public Speaking", "location_name": "Watergraafsmeer", "coords": [52.355509992288276, 4.952238832440393]}, {"host": "Patricia Walsh", "skill": "Financial Modeling", "location_name": "Oud-West", "coords": [52.36475976121954, 4.880798952556133]}, {"host": "Melanie Anderson", "skill": "Dutch Cooking", "location_name": "Plantage", "coords": [52.370737524394116, 4.919923870260167]}, {"host": "Angela Dunlap", "skill": "Agile Coach", "location_name": "Buitenveldert", "coords": [52.33091587516704, 4.875929849822655]}, {"host": "Edward Smith", "skill": "Machine Learning", "location_name": "Oosterparkbuurt", "coords": [52.3616026255879, 4.922279770376994]}, {"host": "Jonathan Chambers", "skill": "Photography", "location_name": "Bos en Lommer", "coords": [52.37391808993447, 4.844821022079626]}, {"host": "Ronald Foley", "skill": "Python", "location_name": "NDSM", "coords": [52.402183303487696, 4.89775618745066]}, {"host": "Thomas Conner", "skill": "Gardening", "location_name": "Zuidas", "coords": [52.34344636133043, 4.866039196151086]}, {"host": "Gabriel Wells", "skill": "Financial Modeling", "location_name": "NDSM", "coords": [52.40552580258715, 4.887660579377246]}, {"host": "Maurice Pitts", "skill": "Public Speaking", "location_name": "Watergraafsmeer", "coords": [52.34496222737897, 4.9388544073578435]}, {"host": "Jose Collins", "skill": "Machine Learning", "location_name": "Oud-West", "coords": [52.360133107365726, 4.86460558093408]}, {"host": "Zachary Small", "skill": "Gardening", "location_name": "Grachtengordel", "coords": [52.367038685776926, 4.875858004971915]}, {"host": "Jamie Barnes", "skill": "Painting", "location_name": "Oosterparkbuurt", "coords": [52.354328512901375, 4.919345117386624]}, {"host": "Tara Wang", "skill": "Dutch Cooking", "location_name": "Watergraafsmeer", "coords": [52.3554761820218, 4.941764879202935]}, {"host": "Melissa Harding", "skill": "Web Dev", "location_name": "NDSM", "coords": [52.40624552547844, 4.896945160315889]}, {"host": "Lindsay Richard", "skill": "Machine Learning", "location_name": "Buitenveldert", "coords": [52.333452083398534, 4.870790870635004]}, {"host": "Candace Simmons", "skill": "Ceramic Art", "location_name": "IJburg", "coords": [52.358195485292974, 4.9973219374589215]}, {"host": "John Jenkins", "skill": "Urban Hiking", "location_name": "NDSM", "coords": [52.39760974518241, 4.9033468303387675]}, {"host": "Wyatt Bruce", "skill": "Gardening", "location_name": "IJburg", "coords": [52.348440575500206, 5.013572882653777]}, {"host": "Sheila Nguyen", "skill": "Financial Modeling", "location_name": "Noord-Centrum", "coords": [52.39269929135482, 4.907857687676814]}, {"host": "Angela Martinez", "skill": "Photography", "location_name": "Bos en Lommer", "coords": [52.37588878131858, 4.84840680280998]}, {"host": "Judith Lang", "skill": "Dutch Cooking", "location_name": "Westerpark", "coords": [52.38694249034074, 4.869452277533172]}, {"host": "Michelle Marsh", "skill": "Public Speaking", "location_name": "Grachtengordel", "coords": [52.370797069644325, 4.882846333723281]}, {"host": "Frank Lozano", "skill": "UX Design", "location_name": "Plantage", "coords": [52.36702979521263, 4.913881804067617]}, {"host": "Kelly Castillo", "skill": "Yoga", "location_name": "Grachtengordel", "coords": [52.36896522052156, 4.875164328548073]}, {"host": "Jamie Marsh", "skill": "Painting", "location_name": "Watergraafsmeer", "coords": [52.35170703977499, 4.941795882603429]}, {"host": "Michael Myers", "skill": "Data Viz", "location_name": "Oud-West", "coords": [52.36152674300882, 4.866835682802545]}, {"host": "Jose Cox", "skill": "UX Design", "location_name": "Oud-West", "coords": [52.371078854249355, 4.87704092367399]}, {"host": "Brandon Mccormick", "skill": "SEO", "location_name": "NDSM", "coords": [52.402212909234265, 4.900474842631083]}, {"host": "Catherine Cohen", "skill": "Public Speaking", "location_name": "Jordaan", "coords": [52.37195948404065, 4.877448182705696]}, {"host": "Karen Mcbride", "skill": "Urban Hiking", "location_name": "De Baarsjes", "coords": [52.374873748360876, 4.857748141879544]}, {"host": "Ashley Kennedy", "skill": "Yoga", "location_name": "Zuidas", "coords": [52.3362037967938, 4.8680400443656815]}, {"host": "Joseph Lee", "skill": "Python", "location_name": "Grachtengordel", "coords": [52.364714191866504, 4.879289657996354]}, {"host": "John Levine", "skill": "Financial Modeling", "location_name": "Buitenveldert", "coords": [52.33203033963573, 4.883918421552116]}, {"host": "John Davis", "skill": "Urban Hiking", "location_name": "Oosterparkbuurt", "coords": [52.36024479879174, 4.918701457234086]}, {"host": "Lindsay Ford", "skill": "Web Dev", "location_name": "Watergraafsmeer", "coords": [52.354006320709914, 4.940346606039433]}, {"host": "Karen Hill", "skill": "Python", "location_name": "Zuidas", "coords": [52.33433318259646, 4.874381396697362]}, {"host": "Manuel Smith", "skill": "Web Dev", "location_name": "De Baarsjes", "coords": [52.36548517108933, 4.86246008503348]}, {"host": "Adam Herrera", "skill": "UX Design", "location_name": "Oud-West", "coords": [52.36550173093738, 4.866479869916736]}, {"host": "Stacey Zavala", "skill": "UX Design", "location_name": "De Pijp", "coords": [52.35212250793652, 4.890552244464224]}, {"host": "Lori Hester DVM", "skill": "SEO", "location_name": "Zuidas", "coords": [52.33182499734426, 4.872887469349397]}, {"host": "Christopher Diaz", "skill": "SEO", "location_name": "Jordaan", "coords": [52.379632566517195, 4.880552625792579]}, {"host": "Mrs. Monica Martin DVM", "skill": "Data Viz", "location_name": "Noord-Centrum", "coords": [52.38956615771656, 4.9234597703645795]}, {"host": "Mike Horne", "skill": "Data Viz", "location_name": "Jordaan", "coords": [52.369806569402094, 4.878515596418827]}, {"host": "Sandra Leblanc", "skill": "Agile Coach", "location_name": "De Baarsjes", "coords": [52.36547432189299, 4.8589757335710715]}, {"host": "Felicia Walls", "skill": "Data Viz", "location_name": "Watergraafsmeer", "coords": [52.34506987781981, 4.936511448820897]}, {"host": "Jennifer Walker", "skill": "Python", "location_name": "Plantage", "coords": [52.37000187528374, 4.905536778920874]}, {"host": "Norma Wagner", "skill": "Data Viz", "location_name": "Bos en Lommer", "coords": [52.38185068957896, 4.8398722971038755]}, {"host": "Monica Williams", "skill": "Web Dev", "location_name": "Westerpark", "coords": [52.3863247462499, 4.87950768699054]}, {"host": "Willie Lopez", "skill": "Financial Modeling", "location_name": "IJburg", "coords": [52.35338578469248, 5.012122256907898]}, {"host": "Joshua Gomez", "skill": "UX Design", "location_name": "Buitenveldert", "coords": [52.32839140659956, 4.877409966642721]}, {"host": "Logan Roberts", "skill": "Web Dev", "location_name": "Oud-Zuid", "coords": [52.357438926392945, 4.872147608173947]}, {"host": "Jeffrey Cummings", "skill": "Photography", "location_name": "Oud-West", "coords": [52.37112849977007, 4.877396695193653]}, {"host": "Jason Johnson", "skill": "Financial Modeling", "location_name": "NDSM", "coords": [52.39645309375353, 4.88598207549437]}, {"host": "Roberto James", "skill": "Public Speaking", "location_name": "Oud-West", "coords": [52.36572989689586, 4.87195246276278]}, {"host": "Brett Hall", "skill": "Data Viz", "location_name": "Buitenveldert", "coords": [52.32947406967638, 4.868522714434403]}, {"host": "Michael Harris", "skill": "Yoga", "location_name": "IJburg", "coords": [52.347751049795335, 5.0008857121827734]}, {"host": "Gary Simmons", "skill": "Urban Hiking", "location_name": "Oud-Zuid", "coords": [52.35253809576779, 4.871686511558723]}, {"host": "Nichole Johnson", "skill": "Public Speaking", "location_name": "Bos en Lommer", "coords": [52.371844480682384, 4.84282334629803]}, {"host": "Peter Woodard", "skill": "Web Dev", "location_name": "Oud-West", "coords": [52.36957632031378, 4.87328971644709]}, {"host": "Christine Mcbride", "skill": "Data Viz", "location_name": "Grachtengordel", "coords": [52.367047343132874, 4.874331797926171]}, {"host": "Lauren Bentley", "skill": "Public Speaking", "location_name": "Oosterparkbuurt", "coords": [52.358057744122355, 4.927771140486484]}, {"host": "Zachary Johnson", "skill": "Photography", "location_name": "Buitenveldert", "coords": [52.329033797635745, 4.877579769622535]}, {"host": "Melissa Berger", "skill": "Urban Hiking", "location_name": "Jordaan", "coords": [52.37718792520768, 4.885534232999316]}, {"host": "Michael Stone", "skill": "Ceramic Art", "location_name": "Noord-Centrum", "coords": [52.39710413291977, 4.912032181193459]}, {"host": "Matthew Elliott", "skill": "Yoga", "location_name": "NDSM", "coords": [52.3998144885492, 4.891434011603372]}, {"host": "Heather Koch", "skill": "Painting", "location_name": "Plantage", "coords": [52.3671091747038, 4.921195402194878]}, {"host": "Benjamin Arnold", "skill": "SEO", "location_name": "De Pijp", "coords": [52.35878399604116, 4.901094010514239]}, {"host": "Bobby Flores", "skill": "Urban Hiking", "location_name": "Plantage", "coords": [52.37216218361909, 4.910962418616088]}, {"host": "Emily Cook", "skill": "Public Speaking", "location_name": "Bos en Lommer", "coords": [52.372750468365226, 4.853839959187757]}, {"host": "Ashley Wallace", "skill": "Yoga", "location_name": "Zuidas", "coords": [52.341735986062325, 4.8825432449476835]}, {"host": "Amber Blair", "skill": "SEO", "location_name": "Oud-West", "coords": [52.364686360277666, 4.874326161216506]}, {"host": "Donald Lamb", "skill": "Urban Hiking", "location_name": "Grachtengordel", "coords": [52.36572793125568, 4.891208541572452]}, {"host": "Bryan Johnson", "skill": "UX Design", "location_name": "Buitenveldert", "coords": [52.33000638869239, 4.877821504186574]}, {"host": "Samantha Miller", "skill": "Public Speaking", "location_name": "Oud-West", "coords": [52.37128234730201, 4.8785817167122145]}, {"host": "Sean Salinas", "skill": "SEO", "location_name": "Oud-West", "coords": [52.371174927716815, 4.878924192849944]}, {"host": "Christian Thomas", "skill": "Data Viz", "location_name": "Jordaan", "coords": [52.37839579428267, 4.885206759593752]}, {"host": "Megan Ford", "skill": "Agile Coach", "location_name": "De Baarsjes", "coords": [52.36587429861205, 4.84888708777221]}, {"host": "Brittany Hunt", "skill": "Python", "location_name": "Indische Buurt", "coords": [52.36438192249272, 4.953802650180717]}, {"host": "Allen Price", "skill": "Gardening", "location_name": "Oud-Zuid", "coords": [52.351363004142925, 4.870240955748742]}, {"host": "David Garcia", "skill": "Machine Learning", "location_name": "Bos en Lommer", "coords": [52.37604926976757, 4.8547389145437645]}, {"host": "Travis Brown", "skill": "Yoga", "location_name": "IJburg", "coords": [52.34814189889343, 5.014023322442678]}, {"host": "Charles Allen", "skill": "Ceramic Art", "location_name": "Oud-West", "coords": [52.368611327379774, 4.877890969622341]}, {"host": "Theresa Ramos", "skill": "Urban Hiking", "location_name": "Buitenveldert", "coords": [52.3361130129631, 4.873340468965048]}, {"host": "Eric Bailey", "skill": "Public Speaking", "location_name": "Indische Buurt", "coords": [52.368020968558625, 4.942392751079367]}, {"host": "Amy Martinez", "skill": "Photography", "location_name": "Bos en Lommer", "coords": [52.38154615216586, 4.848903752801376]}, {"host": "Sean Jenkins", "skill": "Python", "location_name": "Oud-West", "coords": [52.36901580774209, 4.870980484733952]}, {"host": "Brandon Watson", "skill": "SEO", "location_name": "Noord-Centrum", "coords": [52.3943766585212, 4.909230959118594]}, {"host": "Heather Walter", "skill": "Urban Hiking", "location_name": "Grachtengordel", "coords": [52.36595148740496, 4.877614800372821]}, {"host": "Kelly Butler", "skill": "Urban Hiking", "location_name": "Jordaan", "coords": [52.3796988581801, 4.891153038178551]}, {"host": "Ralph Oconnell", "skill": "Painting", "location_name": "Oosterparkbuurt", "coords": [52.36447104984677, 4.914565270305011]}, {"host": "Melanie Martin", "skill": "Machine Learning", "location_name": "Buitenveldert", "coords": [52.33300030413886, 4.873636402373247]}, {"host": "Timothy Porter", "skill": "Photography", "location_name": "De Pijp", "coords": [52.358601233168734, 4.886940717141476]}, {"host": "Veronica James", "skill": "Photography", "location_name": "Jordaan", "coords": [52.376744531839734, 4.882649501490856]}, {"host": "Jose Gonzalez", "skill": "Python", "location_name": "Zuidas", "coords": [52.33196341926007, 4.88067660173625]}, {"host": "William Calhoun", "skill": "Financial Modeling", "location_name": "Oud-West", "coords": [52.36627408465392, 4.869411112772734]}, {"host": "Zachary Baker", "skill": "Public Speaking", "location_name": "Jordaan", "coords": [52.3762590623658, 4.876448329820483]}, {"host": "Julie Thompson", "skill": "Urban Hiking", "location_name": "De Baarsjes", "coords": [52.36625434705192, 4.845576704516651]}, {"host": "Matthew Gray", "skill": "Gardening", "location_name": "IJburg", "coords": [52.35020083792981, 5.00652631113973]}, {"host": "Troy Smith", "skill": "UX Design", "location_name": "Zuidas", "coords": [52.33983350668093, 4.872504317563487]}, {"host": "Taylor Smith", "skill": "Public Speaking", "location_name": "NDSM", "coords": [52.40038658838407, 4.903000367214173]}, {"host": "Matthew Martinez", "skill": "Data Viz", "location_name": "Noord-Centrum", "coords": [52.38956667232467, 4.914322229080153]}, {"host": "Nancy Burns", "skill": "Public Speaking", "location_name": "Noord-Centrum", "coords": [52.3933149246426, 4.908541465835526]}, {"host": "Loretta Rios", "skill": "Ceramic Art", "location_name": "Oosterparkbuurt", "coords": [52.36283452921096, 4.913982791924528]}, {"host": "Jamie Solomon", "skill": "Ceramic Art", "location_name": "Oosterparkbuurt", "coords": [52.35984483291627, 4.927009918085763]}, {"host": "Ryan Perry", "skill": "Machine Learning", "location_name": "Oud-Zuid", "coords": [52.35074694622475, 4.877649073506052]}, {"host": "Melissa Hurley", "skill": "Urban Hiking", "location_name": "Grachtengordel", "coords": [52.37101663205268, 4.878456430850501]}, {"host": "Mary Scott", "skill": "Urban Hiking", "location_name": "Noord-Centrum", "coords": [52.393611113445644, 4.915068659513653]}];
+    const NEIGHBORHOODS = {"Jordaan": [52.3753, 4.8819], "Grachtengordel": [52.3667, 4.8833], "Plantage": [52.3663, 4.9125], "Oud-West": [52.3655, 4.8724], "Westerpark": [52.3858, 4.8722], "Bos en Lommer": [52.3776, 4.8488], "De Baarsjes": [52.3697, 4.8546], "De Pijp": [52.3547, 4.8943], "Oud-Zuid": [52.3524, 4.8719], "Buitenveldert": [52.3306, 4.8752], "Zuidas": [52.3375, 4.8731], "Oosterparkbuurt": [52.3601, 4.9189], "Watergraafsmeer": [52.3508, 4.9458], "Indische Buurt": [52.3639, 4.9441], "IJburg": [52.3533, 5.0042], "Noord-Centrum": [52.3914, 4.9159], "NDSM": [52.4011, 4.8936]};
+    let userTeach = [];
+    let userLearn = [];
+    let userHomeCoords = [52.36, 4.89];
+    
+    let filteredResults = [];
+    let visibleCount = 6;
+
+    function toggleTag(el, type) {
+        el.classList.toggle('selected');
+        const skill = el.innerText;
+        if (type === 'teach') {
+            userTeach.includes(skill) ? userTeach = userTeach.filter(s => s !== skill) : userTeach.push(skill);
+        } else {
+            userLearn.includes(skill) ? userLearn = userLearn.filter(s => s !== skill) : userLearn.push(skill);
+        }
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function renderList() {
+        const grid = document.getElementById('seminarGrid');
+        const btn = document.getElementById('loadMoreBtn');
+        
+        const itemsToShow = filteredResults.slice(0, visibleCount);
+        
+        grid.innerHTML = itemsToShow.map(s => {
+            const isSeeking = userLearn.includes(s.skill);
+            // Dynamic labeling to clarify the role of the person
+            const actionText = isSeeking ? "Learn From Others" : "Share Your Skills";
+            const badgeColor = isSeeking ? 'var(--learn-color)' : 'var(--teach-color)';
+
+            return '<div class="seminar-card">' +
+                   '<div class="dist-tag">' + s.distance.toFixed(1) + ' KM</div>' +
+                   '<div class="match-type" style="color: ' + badgeColor + '">' + actionText + '</div>' +
+                   '<div style="font-weight: 900; font-size: 1.1rem; line-height: 1.2;">' + s.skill + '</div>' +
+                   '<div class="host-name">Hosted by ' + s.host + '</div>' +
+                   '<div style="font-size: 0.7rem; margin-top: 4px; opacity: 0.6; text-transform: uppercase; font-weight: bold;">' + s.location_name + '</div></div>';
+        }).join('');
+
+        if (visibleCount >= filteredResults.length) {
+            btn.classList.add('hidden');
+        } else {
+            btn.classList.remove('hidden');
+        }
+    }
+
+    function loadMore() {
+        visibleCount += 10;
+        renderList();
+    }
+
+    function showFinalResults() {
+        document.getElementById('step2b').classList.add('hidden');
+        document.getElementById('step3').classList.remove('hidden');
+        document.getElementById('progress').style.width = '100%';
+
+        filteredResults = allSeminars.filter(s => userLearn.includes(s.skill) || userTeach.includes(s.skill));
+        filteredResults.forEach(s => {
+            s.distance = getDistance(userHomeCoords[0], userHomeCoords[1], s.coords[0], s.coords[1]);
+        });
+        filteredResults.sort((a, b) => a.distance - b.distance);
+
+        document.getElementById('matchCount').innerText = filteredResults.length + " Workshops Discovered ";
+
+        renderList();
+
+        setTimeout(() => {
+            const map = L.map('map', { scrollWheelZoom: false }).setView(userHomeCoords, 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png').addTo(map);
+            
+            // Your Location Marker
+            L.circleMarker(userHomeCoords, { color: 'var(--dark)', fillColor: 'var(--dark)', fillOpacity: 1, radius: 8 })
+             .addTo(map).bindPopup("<b>YOU ARE HERE</b>").openPopup();
+            
+            filteredResults.forEach(s => {
+                const col = userLearn.includes(s.skill) ? 'var(--learn-color)' : 'var(--teach-color)';
+                L.circleMarker(s.coords, { color: '#1a1a1a', fillColor: col, fillOpacity: 1, radius: 6, weight: 2 })
+                 .addTo(map).bindPopup('<b>' + s.skill + '</b><br>Host: ' + s.host);
+            });
+        }, 300);
+    }
+
+    function goToStep2a() {
+        if(!document.getElementById('userName').value || !document.getElementById('userEmail').value) return alert("Please fill in your details!");
+        const locKey = document.getElementById('userLoc').value;
+        const base = NEIGHBORHOODS[locKey];
+        userHomeCoords = [base[0] + (Math.random()-0.5)*0.005, base[1] + (Math.random()-0.5)*0.008];
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2a').classList.remove('hidden');
+        document.getElementById('progress').style.width = '50%';
+    }
+
+    function goToStep2b() {
+        document.getElementById('step2a').classList.add('hidden');
+        document.getElementById('step2b').classList.remove('hidden');
+        document.getElementById('progress').style.width = '75%';
     }
 </script>
-
 </body>
 </html>
